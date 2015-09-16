@@ -32,6 +32,6 @@ margin-right: 10px;
 }
 
 li {
-    display:inline-block;
+   /* display:inline-block; */
     font-size: 1.2em;
 }
