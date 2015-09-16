@@ -1,0 +1,61 @@
+<script src=lib1.js></script>
+
+<body bgcolor=black>
+<center>
+<canvas id='canvas1' width='800' height='800'>
+</canvas>
+</center>
+</body>
+
+
+<script id='vs' type='other'>
+   attribute vec3 aPosition;
+   varying   vec3 vPosition;
+   void main() {
+      gl_Position = vec4(aPosition, 1.0);
+      vPosition = aPosition;
+   }
+</script>
+
+
+
+<script id='fs' type='other'>
+   precision mediump float;
+   uniform float uTime;
+   uniform vec3  uCursor;
+   varying vec3  vPosition;
+
+   float computeZ(vec2 xy, float r) {
+      float zz = r * r - xy.x * xy.x - xy.y * xy.y;
+      if (zz < 0.)
+         return -1.;
+      else
+         return sqrt(sin(uTime * zz)); //CHANGE THE RADIUS OF THE MASK OVER TIME
+   }
+
+   void main() {
+      float x = vPosition.x;
+      float y = vPosition.y;
+      float z = computeZ(vPosition.xy, 1.0);
+
+      float s = 0.0;
+
+      if (z > 0.) {
+
+         s = 1.;
+
+
+    s *= 1. * sin(5. * (sin(uTime * x) - y + z +
+                                0.1 * sin(30. +
+                               10. * uTime)));
+      }
+
+      gl_FragColor = vec4(s * vec3(1., 1., 1.), 1.);
+   }
+</script>
+
+
+<script>
+start_gl("canvas1", getStringFromScript('vs'), getStringFromScript('fs'));
+</script>
+

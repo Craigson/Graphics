@@ -1,0 +1,64 @@
+<script src=lib1.js></script>
+
+<body bgcolor=black>
+<center>
+<canvas id='canvas1' width='800' height='800'>
+</canvas>
+</center>
+</body>
+
+
+<script id='vs' type='other'>
+   attribute vec3 aPosition;
+   varying   vec3 vPosition;
+   void main() {
+      gl_Position = vec4(aPosition, 1.0);
+      vPosition = aPosition;
+   }
+</script>
+
+
+<script id='fs' type='other'>
+
+precision mediump float;
+
+varying vec3 vPosition;
+uniform float uTime;
+uniform vec3 uCursor;
+
+void main() {
+
+  float brightness = 0.;
+  float offset = 40. ;
+
+  //ITERATE THROUGH A LOOP TO CREATE MULTIPLE ANNULAR RINGS
+  for (float i = 1.; i <= 30.; i++) 
+  {
+    
+      //CREATE VEC3 BASED ON CURSOR POSITION
+       vec3 direction = uCursor - vPosition*offset*sin(uTime);
+
+       //OSCILLATE RING SIZES AS A FUNCITON OF THE LENGTH OF THE DIRECTION VECTOR
+       brightness += length(direction * sin(uTime/2.))/i ;
+  }
+
+   //CREATE RINGS 
+   brightness *= mod(brightness, 2.)-1.;
+
+   //SET THE COLOR OCCORING TO THE BRIGHTNESS
+   vec3 color = vec3(brightness);
+
+   //UNCOMMENT THE SECTIONS BELOW TO ADD COLOURS
+
+  // color.x *= sin(uTime * 3.* (cos(uTime)));
+  // color.y *= cos(uTime * sin(uTime/2.));
+
+   gl_FragColor= vec4(color, 1.0);
+}
+</script>
+
+
+<script>
+start_gl("canvas1", getStringFromScript('vs'), getStringFromScript('fs'));
+</script>
+
