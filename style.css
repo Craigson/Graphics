@@ -38,10 +38,12 @@ h1 {
 h2 {
     font-size: 1em;
 }
+
 li {
    /* display:inline-block; */
     font-size: 1.2em;
     text-decoration: none;
+    list-style-type: none;
 }
 
 #nav {
