@@ -10,6 +10,7 @@
     background-position: left bottom;
     background-repeat: no-repeat;
     color:black;
+    list-style-type: none;
    
 }
 
@@ -48,5 +49,4 @@ li {
 
 #nav {
     bottom: 0px;
-    position: absolute;
 }
