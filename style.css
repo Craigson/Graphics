@@ -5,7 +5,7 @@
     padding:5px;
     width:100%;
     font-family: 'Economica', sans-serif;
-    font-size:100%;
+    font-size:80%;
     text-align: center; 
     background-position: left bottom;
     background-repeat: no-repeat;
@@ -31,11 +31,20 @@ margin-left: 10px;
 margin-right: 10px;
 }
 
+h1 {
+    font-size: 1.2em;
+}
+
+h2 {
+    font-size: 1em;
+}
 li {
    /* display:inline-block; */
     font-size: 1.2em;
+    text-decoration: none;
 }
 
 #nav {
     bottom: 0px;
+    position: absolute;
 }
