@@ -33,15 +33,6 @@
    vec3 LArgb, LBrgb, LCrgb;
    vec3 LAdir, LBdir, LCdir;
 
-
-
-   uniform struct Light {
-   vec3 position;
-   vec3 intensities; //a.k.a the color of the light
-   float attenuation;
-   float ambientCoefficient;
-} light;
-
    float raySphere(vec3 V, vec3 W, vec4 sph) {
 
       /*
