@@ -1,0 +1,156 @@
+<script src=lib1.js></script>
+
+<body bgcolor=black>
+<center>
+<td><canvas id='canvas1' width=400 height=400></canvas></td>
+</center>
+</body>
+
+<script id='my_vertex_shader' type='x-shader/x-vertex'>
+   attribute vec3 aPosition;
+   varying   vec3 vPosition;
+   void main() {
+      gl_Position = vec4(aPosition, 1.0);
+      vPosition = aPosition;
+   }
+</script>
+
+
+<script id='my_fragment_shader' type='x-shader/x-fragment'>
+   precision mediump float;
+   uniform float uTime;
+   uniform vec3  uCursor;
+   varying vec3  vPosition;
+
+   vec4 spheres[6];
+   vec4 sphere;
+   vec3 material;
+   vec3 Lrgb;
+   vec3 Ldir;
+
+   float raySphere(vec3 V, vec3 W, vec4 sph) {
+
+      /*
+      (W dot W)*(t*t) + 2*(W dot D)*t + (D dot D) - r*r = 0
+      SOLVE FOR t (QUADRATIC FORMULA):
+      a*(t*t) + b*t + c = 0;
+      a = W dot W
+      b = 2 * (W dot D)
+      c = (D dot D) - r*r
+
+      t0 = ( -b + sqrt( b*b - 4*a*c) ) / 2*a
+      t1 = ( -b - sqrt( b*b - 4*a*c) ) / 2*a
+      */
+
+      float radius = sph.w;
+      vec3 D = V - sph.xyz;
+      float A = dot(W, W);
+      float B = 2.*(dot(W, D));
+      float C = dot(D, D) - radius*radius;
+      float discriminant = B*B-4.*A*C;
+
+
+      //IF t0 AND t1 ARE BOTH POSITIVE, THE RAY INTERSECTS THE SPHERE (THE SMALLER VALUE IS THE NEAREST POINT)
+      //IF t0 AND t1 ARE EQUAL, THE RAY IS TANGENT
+      //ONE POSITIVE AND ONE NEGATIVE ROOT MEANS THE RAY IS INSIDE THE SPHERE
+      //COMPLEX ROOTS MEAN THERE IS NO INTERSECTION (CHECK THE DISCRIMINANT)
+
+      if (discriminant > 0.0)
+      {
+         float t0 = (-B + sqrt(discriminant));
+         float t1 = (-B - sqrt(discriminant));
+
+         if (t0 > 0.0 && t1 > 0.0)
+         {
+            if (t0 == t1) return t0;
+            float t = t0 < t1 ? t0 : t1;
+            return t;
+        }  
+
+      } else {
+         return 10000.;  
+      }   
+      
+   }
+
+   vec3 shadeSphere(vec3 point, vec4 sphere, vec3 material) {
+
+      vec3 specColour = vec3(1.0, 1.0, 1.0);
+
+      float specular = 1.0;
+      
+      vec3 color = vec3(.0,.0,.0);
+
+      // //COMPUTE THE SURFACE NORMAL FOR THE POINT (DIRECTION UNIT VECTOR FROM POINT TO CENTER OF SPHERE)
+
+      vec3 normal = ( point - sphere.xyz ) / sphere.w ;
+
+      float phong = max(dot(Ldir,normal), 0.0);
+
+      vec3 reflection = 2.*normal*dot(normal, Ldir)-Ldir;
+
+      vec3 ambient = material / 20.;
+      
+      vec3 diffuse = vec3(.2, 0., 0.7); //maybe (.5,0.,0.)
+
+      if (phong > 0.0)
+      {
+      //FOUND THIS HANDY REFLECT FUNCTION
+      vec3 reflectDir = reflect(-Ldir, normal);
+      vec3 viewDir = normalize(-point);
+
+      float specAngle = max(dot(reflectDir, viewDir), 0.0);
+      specular = pow(specAngle, 5.0);
+
+      color = vec3(phong*diffuse + specular*specColour);
+       
+      }
+
+      return color;
+   }
+
+   void main(void) {
+      vec2 c = uCursor.xy;
+
+      //INITIALIZE THE SPHERE WITH CO-ORDINATES AT THE ORIGIN
+      sphere = vec4(0.0,0.0,0.,0.6);
+
+      //SET THE LIGHT COLOUR
+      Lrgb = vec3(0.,.5,0.8);
+
+      //SET THE LIGHT DIRECTION UNIT VECTOR ACCORDING TO THE CURSOR
+      Ldir = normalize(vec3(c.x, c.y, 1. -2. * dot(c, c)));
+      //Ldir = normalize(vec3(sin(uTime), 0.5*sin(uTime), cos(uTime)));
+      //V REPRESENTS THE EYE POINT, W REPRESENTS THE UNIT VECTOR DIRECTION FROM THE EYE TO THE POINT OF INTERSECTION
+      vec3 V, W;
+
+      //EYE POSITION REMAINS THE SAME FOR ALL SPHERES
+      V = vec3(0.,0.,1.); 
+
+      //COMPUTE DIRECTION UNIT VECTOR FROM EYE TO POINT
+      W = normalize(V - vPosition);
+
+      vec3 color = vec3(0., 0., 0.);
+
+      //SET THE MATERIAL COLOUR
+      material = vec3(.2,.2,0.2);
+
+      //CALCULATE THE SCALAR DISTANCE BETWEEN THE EYE POINT AND THE POINT ON THE SPHERE
+      float t = raySphere(V, W, sphere);
+
+      if (t < 10000.)
+         color = shadeSphere(V + t * W, sphere, material);
+
+      // color.r = 0.1; // We added this line in class.
+
+      color = pow(color, vec3(.45,.45,.45)); // Do Gamma correction.
+
+      gl_FragColor = vec4(color, 1.);        // Set opacity to 1.
+   }
+</script>
+
+<script>
+start_gl('canvas1', document.getElementById('my_vertex_shader'  ).innerHTML,
+                    document.getElementById('my_fragment_shader').innerHTML);
+</script>
+
