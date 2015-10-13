@@ -31,19 +31,34 @@
 
    float specularPower = 120.; //VARIABLE THAT DETERMINES SHININESS
 
+   /*
+   ATTENUATION CONSTANTS Kc, Kl, and Kq;
+   WHERE ATTENUATION IS THE FALLOFF AS DISTANCE FROM LIGHT INCREASES:
+
+   att = 1.0 / (Kc + Kl*d + Kq*d^2)
+
+   WHERE d IS THE DISTANE BETWEEN THE LIGHT SOURCE AND THE POINT BEING SHADED
+   */
+
    struct Light
    {
    vec3 position;
    vec3 ambient;
    vec3 diffuse;
    vec3 specular; 
+   float Kc;
+   float Kl;
+   float Kq;
    };
  
    Light mouseLight = Light(
       vec3(0.,0.,0.),            //initial position
-      vec3(0.05, 0.05, 0.05), //ambient
-      vec3(1.0 , 1.0 , 1.0),    //diffuse
-      vec3(1.0 , 1.0 , 1.0)     //specular
+      vec3(0.07, 0.07, 0.07),    //ambient
+      vec3(1.0 , 0.0 , 0.0),     //diffuse
+      vec3(1.0 , 1.0 , 1.0),       //specular,
+      0.0,                       //constant attentuation
+      0.0,                       //linear attenuation
+      0.00002                     //quadratic attenuation
       );
 
    struct Ball
@@ -59,9 +74,9 @@
    Ball ball1 = Ball(
       0.5,                    //radius
       vec3(0.,0.,0.),         //position
-      vec3(1.0,1.0,1.0),  //ambient
-      vec3(0.5,0.8,0.1),  //diffuse
-      vec3(1.0,1.0,1.0)   //specular
+      vec3(1.0,1.0,1.0),      //ambient
+      vec3(.95,.95,.95),      //diffuse
+      vec3(1.0,1.0,1.0)       //specular
       );
 
 
@@ -105,16 +120,18 @@
    vec3 shadeSphere(vec3 point, vec3 W, Ball thisBall, Light thisLight) {
       
 
-      vec3 lightDirection =  point - thisLight.position;
+      vec3 lightDirection =  thisLight.position - point;
       vec3 L = normalize(lightDirection);
 
       vec3 normal = point - thisBall.position;
       vec3 N = normalize(normal);
 
-
+      //DETERMINE THE DISTANCE FOR WORKING OUT ATTENUATION / FALLOFF
+      float d = length(lightDirection);
+      d = 1. / pow(d,2.);
 
       //LAMBERT'S COSINE LAW
-      float lambertTerm = dot(N, -L);
+      float lambertTerm = dot(N,L); //WHY -L?
 
       vec3 Ia = thisLight.ambient * thisBall.materialAmbient; //ambient
       vec3 Id = vec3(0.,0.,0.);       //diffuse
@@ -123,17 +140,17 @@
       //ONLY IF LAMBERT IS POSITIVE
       if (lambertTerm > 0.0)
       {
-         Id = thisLight.diffuse * thisBall.materialDiffuse * lambertTerm;
+         Id = (thisLight.diffuse * thisBall.materialDiffuse * lambertTerm) / d;
 
          //DIRECTION TO THE EYE IS OPPOSITE W
          vec3 E = -W;
 
-         //THE BUILT IN REFLECT FUNCTION REPLACES 2 * dot(N,L)N - L
-         vec3 R = reflect(L,N);
+         vec3 H = normalize(L + E);             
 
-         float specular = pow( max(dot(R,E), 0.0) , specularPower );
+         float specular = pow( max(dot(N,H), 0.0) , specularPower/4. );
 
-         Is = thisLight.specular * thisBall.materialSpecular * specular;
+         Is = (thisLight.specular * thisBall.materialSpecular * specular) / d;
+
       }
 
      vec3 finalColour = Ia + Id + Is;
@@ -154,7 +171,7 @@
       vec3 W;
 
       //COMPUTE DIRECTION UNIT VECTOR FROM EYE TO POINT
-      W = normalize(vec3(eyePos.x - vPosition.x, eyePos.y - vPosition.y, -eyePos.z));
+      W = normalize(vec3(vPosition.x - eyePos.x,vPosition.y - eyePos.y, -eyePos.z)); //WHY IS THE eyePos.z NEGATIVE?
 
       vec3 color = vec3(0., 0., 0.);
 

@@ -1,0 +1,250 @@
+<script src=lib1.js></script>
+
+<body bgcolor=black>
+<center>
+<td><canvas id='canvas1' width=600 height=600></canvas></td>
+</center>
+</body>
+
+<script id='my_vertex_shader' type='x-shader/x-vertex'>
+   attribute vec3 aPosition;
+   varying   vec3 vPosition;
+   void main() {
+      gl_Position = vec4(aPosition, 1.0);
+      vPosition = aPosition;
+   }
+</script>
+
+<script id='my_fragment_shader' type='x-shader/x-fragment'>
+   precision mediump float;
+   uniform float uTime;
+   uniform vec3  uCursor;
+   varying vec3  vPosition;
+
+   const vec3 eyePos = vec3(0.0,0.0,1.0);
+
+   float specularPower = 360.; //VARIABLE THAT DETERMINES SHININESS
+
+   struct Light
+   {
+   vec3 position;
+   vec3 ambient;
+   vec3 diffuse;
+   vec3 specular; 
+   };
+
+   struct Ball
+   {
+      float radius;
+      vec3 position;
+      vec3 materialAmbient;
+      vec3 materialDiffuse;
+      vec3 materialSpecular;
+   };
+
+   Ball balls[2];
+   Light lights[1];
+
+   
+   //CREATE AND INITIALIZE BALL OBJECTS
+   void initObjects()
+   {
+
+      lights[0] = Light(
+      vec3(0.,0.,0.),            //initial position
+      vec3(0.3, 0.3, 0.3),       //ambient
+      vec3(1.0 , 1.0 , 1.0),     //diffuse
+      vec3(1.0 , 1.0 , 1.0)      //specular
+   );
+      //CENTRE BALL   
+      balls[0] = Ball(
+         0.5,                    //radius
+         vec3(0.,0.,-.3),        //position
+         vec3(1.0,.0,.0),        //ambient
+         vec3(.95,.0,.0),        //diffuse
+         vec3(1.0,1.0,1.0)       //specular
+      );
+      
+      balls[1] = Ball(
+         0.2,                    //radius
+         vec3(0.5 * cos(uTime),0.5 * sin(uTime), 0. + 0.3 * cos(uTime)),            //position
+         vec3(0.0,.3,.9),       //ambient
+         vec3(0.0,.3,.9),       //diffuse
+         vec3(1.0,1.0,1.0)      //specular
+      );
+   }
+//---------------------------------------------------
+// THIS ROUTINE DETERMINES IF THE RAY HITS THE SPHERE AND, IF SO, WHAT THE SCALAR DISTANCE BETWEEN THE EYE AND POINT OF INTERSECTION IS. IF THERE IS NO INTERSECTION, A VALUE OF 10000. IS RETURNED
+
+   float calcIntersection(vec3 V, vec3 W, Ball thisBall) {
+
+      float radius = thisBall.radius;
+      vec3 D = V - thisBall.position;
+      // float A = dot(W, W); // dot(W,W) = 1
+      float discriminant = pow( dot(D,W), 2.) - (dot(D,D) - pow(radius, 2.0));
+
+      float t0 = 0.;
+      float t1 = 0.;
+      if(discriminant > 0.){
+         t0 = -dot(D, W) - sqrt(discriminant);
+         t1 = -dot(D, W) + sqrt(discriminant);
+      } else {
+         return 10000.;
+      }
+
+      if (t0 > 0. && t1 > 0.)
+      {
+       
+       if(t0 == t1) return t0;
+
+      } if (t0 < t1) {
+         return t0;
+      } else {
+      return t1;
+      } 
+      
+   }
+
+//-----------------------------------------------------------
+// THIS ROUTINE DETERMINES IF ANOTHER OBJECT PASSES BETWEEN THE GIVEN OBJECT AND A GIVEN LIGHT SOURCE
+
+float calcShadow(vec3 rayOrigin, Light lightSource, Ball ballToCheck)
+{
+   float radius = ballToCheck.radius;
+   vec3 toLight = normalize(lightSource.position - rayOrigin); //W
+   vec3 newOrigin = rayOrigin + 0.001 * toLight;
+
+   vec3 dir = normalize(ballToCheck.position - newOrigin); //D
+
+   float discriminant = pow(dot(dir,toLight), 2.) - (dot(dir,dir) - pow(radius,2.0));
+
+   //IF THE SHADOW RAY INTERSECTS ANY OF THE OTHER OBJECTS, RETURN 0.
+   if(discriminant > 0.)
+   {
+      return 0.;
+   } else {
+      return 1.;
+   }
+}
+
+//----------------------------------------------------
+
+//THIS ROUTINE DETERMINES THE COLOUR OF THE GIVEN PIXEL BY COMPUTING ALL THE RELEVANT LIGHTING CALCULATIONS
+
+   vec3 shadeSphere(vec3 point, vec3 W, Ball thisBall, Light thisLight, float shadowVal) {
+      
+
+      vec3 lightDirection =  thisLight.position - point;
+      vec3 L = normalize(lightDirection);
+
+      vec3 normal = point - thisBall.position;
+      vec3 N = normalize(normal);
+
+      //DETERMINE THE DISTANCE FOR WORKING OUT ATTENUATION / FALLOFF WITH DISTANCE
+      float d = length(lightDirection);
+      d = 1. / pow(d,2.);
+
+      //LAMBERT'S COSINE LAW
+      float lambertTerm = dot(N,L);
+
+      vec3 Ia = vec3( 0. , 0. , 0. );  //ambient
+      vec3 Id = vec3( 0. , 0. , 0. );  //diffuse
+      vec3 Is = vec3( 0. , 0. , 0. );  //specular
+
+      //IF THERE WAS NO INTERSECTION WITH OTHER OBJECTS, LIGHT THE BALL AS PER NORMAL
+      if (shadowVal == 1.)
+      {
+
+         //ONLY IF LAMBERT IS POSITIVE
+         if (lambertTerm > 0.0)
+         {
+
+            Id = (thisLight.diffuse * thisBall.materialDiffuse * lambertTerm) / d;
+
+            //DIRECTION TO THE EYE IS OPPOSITE W
+            vec3 E = -W;
+
+            //DETERMINE THE HALF VECTOR FOR BLINN-PHONG SHADING
+            vec3 H = normalize(L + E);             
+
+            float specular = pow( max(dot(N,H), 0.0) , specularPower/4. );
+
+            Is = (thisLight.specular * thisBall.materialSpecular * specular) / d;
+
+         }
+      } else {
+        Ia = thisLight.ambient * thisBall.materialAmbient;
+      }
+
+      vec3 finalColour = Ia + Id + Is;
+
+      return finalColour;
+   }
+
+   //--------------------------------------------------------
+
+   void main(void) {
+
+      initObjects();
+
+      vec2 c = uCursor.xy;
+      lights[0].position.x = c.x;
+      lights[0].position.y = c.y;
+      lights[0].position.z = 1.;
+
+      float tempT = 10000.;
+
+      vec3 color = vec3(0., 0., 0.);
+
+           //COMPUTE DIRECTION UNIT VECTOR FROM EYE TO POINT
+      vec3 W = normalize(vec3(vPosition.x - eyePos.x,vPosition.y - eyePos.y, -eyePos.z)); //WHY IS THE eyePos.z NEGATIVE?
+
+      //FOR EVERY BALL...
+      for (int i = 0; i < 2; i++)
+      {
+    
+         //CALCULATE THE SCALAR DISTANCE BETWEEN THE EYE POINT AND THE POINT ON THE BALL
+         float t = calcIntersection(eyePos, W, balls[i]);
+
+
+         //CHECK WHICH OBJECT IS CLOSEST TO THE EYE
+         if (t < 10000. && t < tempT)
+         {
+
+         vec3 pointOnSphere = eyePos + t * W;
+
+            //FOR EVERY LIGHT...
+            for (int j = 0; j < 1; j++)
+            {
+
+               //CHECK WHETHER THE POINT ON BALL[i] IS OBSTRUCTED BY ANY OF THE OTHER BALLS
+               for (int k = 0; k < 2; k++)
+               {
+                  //ENSURE THAT THE BALL IS NOT CHECKING ITSELF
+                  if (i != k)
+                  {
+                     float shadowVal = calcShadow(pointOnSphere, lights[j], balls[k]);
+
+                     //APPLY LIGHTING TO PIXEL
+                     color = shadeSphere(pointOnSphere, W, balls[i], lights[j], shadowVal);
+                     
+                  }
+               }
+            }
+            //SET tempT TO THE CLOSEST t-VALUE
+            tempT = t;
+
+         }
+      }
+  //   color = pow( color, vec3( .45 , .45 , .45 ) ); // Do Gamma correction.
+
+      gl_FragColor = vec4(color, 1.0);        // Set opacity to 1.
+   }
+
+</script>
+
+<script>
+start_gl('canvas1', document.getElementById('my_vertex_shader'  ).innerHTML,
+                    document.getElementById('my_fragment_shader').innerHTML);
+</script>
+
