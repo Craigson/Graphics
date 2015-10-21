@@ -1,0 +1,97 @@
+
+<table>
+
+<tr>
+<td><canvas id=canvas1 width=600 height=600></td>
+<td width=50></td>
+<td valign=top>
+<p>Program Flow</p>
+<p>Create a 4x4 matrix</p>
+<p>Initialize it by calling the identity() member function</p>
+<p>Create an array to store the vertices for a shape</p>
+<p>Create an array to store the indices of each side of the shape</p>
+<p>Create a new shape object, passing in the vertices and edges indices as arguments</p>
+<p>Each time the canvas updates:</p>
+<p>Invoke the identity() member function on the matrix to reset it</p>
+<p>Multiply the matrix by the scale, rotation and translation matrices</p>
+<p>Transform each vertex using the transform() member function of the matrix</p>
+<p>Convert co-ordinates for each vertex from world space to canvas space</p>
+<p>Iterate through the indices array and draw lines between each pair of vertices</p>
+
+</td>
+</tr>
+
+</table>
+
+<script src=drawlib1.js type = "text/javascript"></script>
+<script type="text/javascript">
+
+   //-------------------- 2 D  S Q U A R E ----------------------
+
+   //CREATE VECTOR3s FOR EACH VERTEX OF A SQUARE
+   var s0 = new Vector3(-0.5,-0.5,0);
+   var s1 = new Vector3(0.5,-0.5,0);
+   var s2 = new Vector3(0.5,0.5,0);
+   var s3 = new Vector3(-0.5,0.5,0);
+   
+   var squareVerts = [s0,s1 ,s2,s3];
+   var squareIndices = [[0,1], [1,2], [2,3], [3,0]];
+   var newVerts = [];
+   var square = new Shape(squareVerts, squareIndices);
+
+   var squareArray =[];
+
+   for (var i = 0; i < 50; i++){
+      squareArray[i] = square;
+   }
+
+   var offset = 0;
+
+console.log(squareArray.length);
+   //--------------------------------------------------------
+
+   //CREATE A NEW MATRIX AND INITIALIZE IT
+   var m = new Matrix();
+   m.identity();
+
+   var canvas = initCanvas('canvas1');
+
+   var wd = canvas.width;
+   var ht = canvas.height;
+   
+   console.log(m);
+
+   var theta = 0;
+
+   canvas.update = function(g) {
+      for (var i = 0; i < squareArray.length; i++)
+      {
+         m.identity();
+         m.scale(0.99, 0.99, 0.99);
+         m.rotateY(theta * 0.1 + offset*0.5+Math.sin(theta)/2);
+         m.rotateX(theta * 0.2 + offset/Math.sin(theta));
+         m.rotateZ(theta * -0.01 + offset/Math.cos(theta/2) );
+         m.translate(0.01 * Math.cos(theta) + offset, 0 , 0);
+         squareArray[i].render(g, m, wd, ht);
+         offset += 0.0005;
+      }
+
+
+      g.strokeStyle = 'blue';
+      g.beginPath();
+      g.moveTo(0,0);
+      g.lineTo(this.width,0);
+      g.lineTo(this.width,this.height);
+      g.lineTo(0,this.height);
+      g.lineTo(0,0);
+      g.stroke();
+
+      
+ theta += 0.000001;
+
+// console.log(theta);
+   }
+
+
+</script>
+
