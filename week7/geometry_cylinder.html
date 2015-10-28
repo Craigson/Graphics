@@ -1,0 +1,72 @@
+
+<table>
+
+<tr>
+<td><canvas id=canvas1 width=600 height=600></td>
+<td width=50></td>
+<td valign=top>
+</td>
+</tr>
+
+</table>
+
+<script src=drawlib1.js type = "text/javascript"></script>
+<script type="text/javascript">
+
+
+   var v0 = new Vector3(-1,-1,-1);
+   var v1 = new Vector3(1,-1,-1);
+   var v2 = new Vector3(-1,1,-1);
+   var v3 = new Vector3(1,1,-1);
+   var v4 = new Vector3(-1,-1,1);
+   var v5 = new Vector3(1,-1,1);
+   var v6 = new Vector3(-1,1,1);
+   var v7 = new Vector3(1,1,1);
+
+
+   var cylinder = new Geometry3D();
+   cylinder.createCylinder(10, 20);
+
+
+   //CREATE A NEW MATRIX AND INITIALIZE IT
+   var m = new Matrix();
+   m.identity();
+
+   var canvas = initCanvas('canvas1');
+
+   var wd = canvas.width;
+   var ht = canvas.height;
+   
+  // console.log(m);
+
+   var theta = 0;
+
+   canvas.update = function(g) {
+
+      m.identity();
+      m.scale(0.25, 0.25, 0.25);
+      m.rotateX(theta * 0.05);
+      m.rotateY(theta * .5);
+      m.rotateZ(theta * .5);  
+
+
+      cylinder.render(g,m, wd, ht);
+
+      g.strokeStyle = 'blue';
+      g.beginPath();
+      g.moveTo(0,0);
+      g.lineTo(this.width,0);
+      g.lineTo(this.width,this.height);
+      g.lineTo(0,this.height);
+      g.lineTo(0,0);
+      g.stroke();
+
+      
+ theta += 0.01;
+
+// console.log(theta);
+   }
+
+
+</script>
+

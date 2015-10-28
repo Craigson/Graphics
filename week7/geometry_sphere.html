@@ -1,0 +1,110 @@
+
+<table>
+
+<tr>
+<td><canvas id=canvas1 width=600 height=600></td>
+<td width=50></td>
+<td valign=top>
+</td>
+</tr>
+
+</table>
+
+<script src=drawlib1.js type = "text/javascript"></script>
+<script type="text/javascript">
+canvas1.width = window.innerWidth;
+canvas1.height = window.innerHeight;
+var numSpheres = 10;
+
+  var spheres = [];
+  var matrices = [];
+  var scales = [];
+  var rotXs = [];
+  var rotYs = [];
+  var rotZs = [];
+  var translates = [];
+
+  for (var i = 0; i < numSpheres; i++)
+  {
+
+   var sphere = new Geometry3D();
+   sphere.createSphere(20,20);
+   spheres.push(sphere);
+
+   var m = new Matrix();
+   m.identity();
+   matrices.push(m);
+
+   var s = Math.random() * 0.5;
+   scales.push(s);
+
+   var x = Math.random();
+   rotXs.push(x);
+
+    var y = Math.random();
+   rotYs.push(y);
+
+    var z = Math.random();
+   rotZs.push(z);
+
+   var tx = Math.random();
+   var ty = Math.random();
+   var tz = Math.random();
+   var trans = new Vector3(tx,ty,tz);
+   translates.push(trans);
+
+
+  }
+
+
+
+
+
+   var canvas = initCanvas('canvas1');
+
+   var wd = canvas.width;
+   var ht = canvas.height;
+   
+  // console.log(m);
+
+   var theta = 0;
+
+   canvas.update = function(g) {
+
+      for (var i = 0; i < numSpheres; i ++)
+      {
+        matrices[i].identity();
+        matrices[i].scale(scales[i],scales[i],scales[i]);
+        matrices[i].rotateX(theta * rotXs[i]);
+        matrices[i].rotateY(theta * rotYs[i]);
+        matrices[i].rotateZ(theta * rotZs[i]);
+        matrices[i].translate(translates[i].x,translates[i].y,translates[i].z);
+        spheres[i].render(g, matrices[i], wd,ht);
+      }
+      // m.identity();
+      // m.scale(0.25, 0.25, 0.25);
+      // m.rotateX(theta * 0.05);
+      // m.rotateY(theta * .5);
+      // m.rotateZ(theta * .5);  
+
+      // sphere.render(g, m, wd, ht);
+
+
+      g.strokeStyle = 'blue';
+      g.beginPath();
+      g.moveTo(0,0);
+      g.lineTo(this.width,0);
+      g.lineTo(this.width,this.height);
+      g.lineTo(0,this.height);
+      g.lineTo(0,0);
+      g.stroke();
+
+      
+ theta += 0.01;
+
+// console.log(theta);
+   }
+
+
+</script>
+
