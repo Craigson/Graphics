@@ -1,0 +1,147 @@
+
+<table>
+
+<tr>
+<td><canvas id=canvas1 width=600 height=600></td>
+<td width=50></td>
+<td valign=top>
+</td>
+</tr>
+
+</table>
+
+<script src=drawlib1.js type = "text/javascript"></script>
+<script type="text/javascript">
+
+   //AN ARRAY TO STORE THE POINTS ON THE SPLINE
+   var knots = [];
+   var tempKnot;
+
+   //CREATE A NEW MATRIX AND INITIALIZE IT
+   var m = new Matrix();
+   m.identity();
+
+   var spline = new Spline('hermite', 20);
+
+   var showControls = false;
+
+   var canvas = initCanvas('canvas1');
+
+   var wd = canvas.width;
+   var ht = canvas.height;
+
+   var theta = 0;
+
+   var anchorLoc = new Vector3();
+   var dragLoc = new Vector3();
+   var mouseDragged = false;
+   var numKnots = 0;
+
+   function showGuides(g, from, to)
+   {
+           // var center = convertToCanvas(knot.position,w,h);
+      var center = from;
+
+      //DRAW THE SPLINE POINT
+      g.beginPath();
+      g.arc(center.x, center.y, 2, 0, 2 * Math.PI, false);
+      g.fillStyle = 'green';
+      g.fill();
+      g.lineWidth = 1;
+      g.stroke();
+
+      // var converted = convertToCanvas(knot.controlPoint,w,h);
+      var converted = to;
+      
+      //DRAW CONTROL POINT
+      g.beginPath();
+      g.arc(converted.x, converted.y, 1, 0, 2 * Math.PI, false);
+      g.fillStyle = 'red';
+      g.fill();
+      g.lineWidth = 1;
+      g.stroke();
+
+      //DRAW THE TANGENT LINE
+      g.beginPath();
+      g.moveTo(center.x, center.y);
+      g.lineTo(converted.x, converted.y);
+      g.stroke();
+   }
+
+   canvas.onmousedown = function(e)
+   {
+      mouseDragged = true;
+      var tempX = e.clientX;
+      var tempY = e.clientY;
+
+      // var convertedX = mapRange(tempX, 0, wd, -1, 1);
+      // var convertedY = mapRange(tempY, 0, ht, 1, -1);
+
+      var tempVec = new Vector3(tempX, tempY, 0);
+      anchorLoc = tempVec;
+
+      tempKnot = new Knot(tempVec);
+      // knots.push(tempKnot);
+      // console.log("pushing to knots");
+   }
+
+   canvas.onmousemove = function(e)
+   {
+
+      if (mouseDragged)
+      {
+      dragLoc.set(e.clientX, e.clientY, 0);
+      console.log("im draggin");
+      console.log(dragLoc);
+      }
+ 
+   }
+
+   canvas.onmouseup = function(e) 
+      {
+         mouseDragged = false;
+         var tempX = e.clientX;
+         var tempY = e.clientY;
+
+         var convertedX = mapRange(tempX, 0, wd, -1, 1);
+         var convertedY = mapRange(tempY, 0, ht, 1, -1);
+
+         // console.log(" x: " + tempX + "  newX: " + convertedX);
+         // console.log("y: " + tempY + " newY: " + convertedY);
+
+         var controlPointVec = new Vector3(tempX, tempY, 0);
+
+         tempKnot.controlPoint = controlPointVec;
+         //knots[index].controlPoint = controlPointVec;
+         spline.addKnot(tempKnot);
+      }
+
+   canvas.update = function(g) {
+      m.identity();
+      m.scale(0.25, 0.25, 0.25);
+      m.rotateX(theta * 0.05);
+      m.rotateY(theta * .5);
+      m.rotateZ(theta * .5);  
+
+      if(mouseDragged && showControls) showGuides(g, anchorLoc, dragLoc);
+
+      spline.render(knots,g,wd,ht);
+
+      g.strokeStyle = 'blue';
+      g.beginPath();
+      g.moveTo(0,0);
+      g.lineTo(this.width,0);
+      g.lineTo(this.width,this.height);
+      g.lineTo(0,this.height);
+      g.lineTo(0,0);
+      g.stroke();
+
+      
+ theta += 0.01;
+
+// console.log(theta);
+   }
+
+
+</script>
+
