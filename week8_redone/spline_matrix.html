@@ -1,0 +1,228 @@
+<table>
+
+<tr>
+<td><canvas id=canvas1 width=600 height=600></td>
+<td width=50></td>
+<td valign=top>
+<p> Click and drag to create a control point </p>
+<p> Hold the ALT key and click on a point to delete it </p>
+<p> Hold the SHIFT key and click-and-drag a point, or control point, to move it </p>
+
+
+</td>
+</tr>
+
+</table>
+
+<button id='controls' onclick='showHide()'>show/hide controls</button>
+
+
+<script src = "libs/drawlib1.js" type = "text/javascript"></script>
+<script src="libs/geom.js" type = "text/javascript"></script>
+<script src="libs/curves.js" type = "text/javascript"></script>
+
+<script type="text/javascript">
+
+   //AN ARRAY TO STORE THE POINTS ON THE SPLINE
+   var knots = [];
+   var tempKnot;
+
+   //CREATE A NEW MATRIX AND INITIALIZE IT
+   var m = new Matrix();
+   m.identity();
+
+   var spline = new Spline('hermite', 20);
+
+  // var showControls = true;
+
+   var canvas = initCanvas('canvas1');
+
+
+
+   var wd = canvas.width;
+   var ht = canvas.height;
+
+   var theta = 0;
+
+   var anchorLoc = new Vector3();
+   var mouseLoc = new Vector3();
+   var mouseDragged = false;
+   var deletePoint = false;
+   var movePoint = false;
+   var moveControl = false;
+   var holdingKnot = false;
+
+   var numKnots = 0;
+
+   var delThresh = 0.1;
+
+   document.addEventListener("keydown", function(e){
+      if (e.keyCode == 18) deletePoint = true;
+      if (e.keyCode == 16)
+      {
+       movePoint = true;
+       moveControl = true;
+    }
+   });
+
+   document.addEventListener("keyup", function(e){
+      if (e.keyCode == 18) deletePoint = false;
+      if (e.keyCode == 16) 
+         {
+            movePoint = false;
+             moveControl = true;
+          }
+      for (var i = 0; i < spline.knots.length; i++) spline.knots[i].held = false;
+   });
+
+   function showHide()
+   {
+      spline.showControls = !spline.showControls;
+   }
+
+   function showGuides(g, from, to)
+   {
+      if (movePoint == false && deletePoint == false && mouseDragged == true)
+      {
+         var center = convertToCanvas(from,wd,ht);
+
+         //DRAW THE SPLINE POINT
+         g.beginPath();
+         g.arc(center.x, center.y, 2, 0, 2 * Math.PI, false);
+         g.fillStyle = 'green';
+         g.strokeStyle = 'red';
+         g.fill();
+         g.lineWidth = 1;
+         g.stroke();
+
+         var converted = convertToCanvas(to,wd,ht);
+         //var converted = to;
+         
+         //DRAW CONTROL POINT
+         g.beginPath();
+         g.arc(converted.x, converted.y, 1, 0, 2 * Math.PI, false);
+         g.fillStyle = 'red';
+         g.fill();
+         g.lineWidth = 1;
+         g.stroke();
+
+         //DRAW THE TANGENT LINE
+         g.beginPath();
+         g.moveTo(center.x, center.y);
+         g.lineTo(converted.x, converted.y);
+         g.stroke();
+      }
+   }
+
+   canvas.onmousedown = function(e)
+   {
+      mouseDragged = true;
+      var tempX = e.clientX;
+      var tempY = e.clientY;
+
+      var convertedX = mapRange(tempX, 0, wd, -1, 1);
+      var convertedY = mapRange(tempY, 0, ht, 1, -1);
+
+      var tempVec = new Vector3(convertedX, convertedY, 0);
+
+
+      
+
+      if (deletePoint == false && movePoint == false)
+         {
+            tempKnot = new Knot(tempVec);
+            anchorLoc = tempVec;
+         }
+
+
+
+      if (spline.knots.length > 0)
+      {
+         for (var i = 0 ; i < spline.knots.length; i++)
+         {
+            // var diffControlX = Math.abs(mouseLoc.x - spline.knots[])
+      var diffX = Math.abs(mouseLoc.x - spline.knots[i].position.x);
+      var diffY = Math.abs(mouseLoc.y - spline.knots[i].position.y);
+            if (diffX < delThresh && diffY < delThresh){
+               if (deletePoint == true)spline.removeKnot(i);
+               if (movePoint == true) {
+                  spline.knots[i].held = true;
+                  console.log(i);
+                  holdingKnot = true;
+               }
+
+            }
+         }
+      }
+   }
+
+   canvas.onmousemove = function(e)
+   {
+         var convX = mapRange(e.clientX,0,wd,-1,1);
+         var convY = mapRange(e.clientY,0,ht,1,-1);
+         mouseLoc.set(convX, convY, 0);
+   //       console.log("im draggin");
+   //       console.log(dragLoc);
+    }
+
+   canvas.onmouseup = function(e) 
+      {
+         mouseDragged = false;
+         holdingKnot = false;
+         if (deletePoint == false && movePoint == false)
+         {
+         
+         var tempX = e.clientX;
+         var tempY = e.clientY;
+
+         var convertedX = mapRange(tempX, 0, wd, -1, 1);
+         var convertedY = mapRange(tempY, 0, ht, 1, -1);
+
+
+         var controlPointVec = new Vector3(convertedX,convertedY, 0);
+
+         tempKnot.controlPoint = controlPointVec;
+  
+         if (spline.knots.length==0) tempKnot.isBeginning = true;
+
+         if (spline.knots.length > 1) tempKnot.isEndPoint = true;
+
+         var index;
+
+         if (spline.knots.length > 0)
+         {
+            index = spline.knots.length;
+         } else {
+            index = 0;
+         }
+
+         tempKnot.setIndex(index);
+
+         spline.addKnot(tempKnot);
+
+         if (spline.knots.length > 2)
+         spline.knots[spline.knots.length-2].isEndPoint = false;
+         }
+      }
+
+   canvas.update = function(g) {
+
+      if(mouseDragged == true && movePoint == false && deletePoint == false) showGuides(g, anchorLoc, mouseLoc);
+
+      if (holdingKnot = true) spline.updateKnots(mouseLoc);
+
+      spline.render(g,wd,ht);
+
+      g.strokeStyle = 'blue';
+      g.beginPath();
+      g.moveTo(0,0);
+      g.lineTo(this.width,0);
+      g.lineTo(this.width,this.height);
+      g.lineTo(0,this.height);
+      g.lineTo(0,0);
+      g.stroke();
+   }
+
+
+</script>
+
