@@ -1,0 +1,134 @@
+
+<script src="libs/drawlib1.js" type = "text/javascript"></script>
+<script src="libs/geom.js" type = "text/javascript"></script>
+
+<script type = "text/javascript">
+
+var sphere = new Geometry3D();
+sphere.initSphere(12,24,0.8);
+
+//sphere, tube, torus
+
+var gl, prog;
+
+function draw() {
+   gl = document.getElementById('canvas1').getContext('experimental-webgl');
+   gl.enable(gl.DEPTH_TEST);
+   gl.depthFunc(gl.LEQUAL);
+   prog = gl.createProgram();
+
+   function addShader(type, str) {
+      var s = gl.createShader(type);
+      gl.shaderSource(s, str);
+      gl.compileShader(s);
+      gl.attachShader(prog, s);
+   }
+
+   addShader(gl.VERTEX_SHADER, [
+      ,'attribute vec3 aPos;'
+      ,'uniform mat4 uMatrix;'
+      ,'varying vec3 uPos;'
+      ,'void main() {'
+      ,'   uPos = aPos;'
+      ,'   gl_Position = uMatrix * vec4(aPos, 1.);'
+      ,'}',
+      ].join('\n')
+   );
+
+   addShader(gl.FRAGMENT_SHADER, [
+      ,'precision highp float;'
+      ,'varying vec3 uPos;'
+      ,'void main() {'
+      ,'   gl_FragColor = vec4(vec3(0.,1.,1.) * (uPos.z < .5 ? uPos.z == -.4 ? .4 : .5 : .1), .5);'
+      ,'}',
+      ].join('\n')
+   );
+
+   var vertices = [];
+   var slices = 10;
+   var stacks = 20;
+   var radius = 0.3;
+   var theta; 
+   var x, y, z;
+
+
+        for(var v = 0; v < slices; v++){
+            for(var u = 0; u < stacks; u++){
+
+               //TOP VERTEX
+                theta = 2 * Math.PI * u/stacks;
+
+                x = Math.cos(theta) * radius;
+                y = Math.sin(theta) * radius;
+                z = (1 - 2 * v/slices) * radius;
+
+                vertices.push(x);
+                vertices.push(y);
+                vertices.push(z);
+
+                //BOTTOM VERTEX
+                theta = 2 * Math.PI * u/stacks;
+
+                x = Math.cos(theta) * radius;
+                y = Math.sin(theta) * radius;
+                z = (1 - 2 * (v+1)/slices) * radius;
+
+                vertices.push(x);
+                vertices.push(y);
+                vertices.push(z);
+
+                //third point strip
+                theta = 2 * Math.PI * (u+1)/stacks;
+
+                x = Math.cos(theta) * radius;
+                y = Math.sin(theta) * radius;
+                z = (1 - 2 * v/slices) * radius;
+
+                vertices.push(x);
+                vertices.push(y);
+                vertices.push(z);
+
+                //forth point strip
+                theta = 2 * Math.PI * u/stacks;
+
+                x = Math.cos(theta) * radius;
+                y = Math.sin(theta) * radius;
+                z = (1 - 2 * (v+1)/slices) * radius;
+
+                vertices.push(x);
+                vertices.push(y);
+                vertices.push(z);
+         
+        }
+    }
+
+
+
+   function address(name) { return gl.getUniformLocation(prog, name); }
+
+   gl.linkProgram(prog);
+   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   var attr = gl.getAttribLocation(prog, 'aPos');
+   gl.enableVertexAttribArray(attr);
+   gl.vertexAttribPointer(attr, 3, gl.FLOAT, false, 0, 0);
+   gl.useProgram(prog);
+
+   setInterval(tick, 1000 / 60);
+
+   function tick() {
+      var turn = (new Date()).getTime() / 1000.;
+      var cos = Math.cos(turn);
+      var sin = Math.sin(turn);
+      var adjust = gl.canvas.height / gl.canvas.width;
+      var matrix = [ adjust*cos,  0,sin, .1*sin,
+                              0,  1,  0,  0,
+                    -adjust*sin,  0,cos, .1*cos,
+                              0,  0,  0,  1];
+      gl.uniformMatrix4fv(address('uMatrix'), false, matrix);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertices.length / 3);
+   }
+}
+setTimeout(draw, 100);
+</script>
+<canvas id=canvas1 width=640 height=480></canvas>
