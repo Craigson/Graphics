@@ -1,0 +1,111 @@
+<script src="Craig.js"></script>
+<script>
+
+var upperArm;
+var forearm;
+var elbow;
+var hand, palm, thumb, finger1;
+
+var ANGLE_STEP = 3.0;
+var g_arm1Angle = 0.0;
+var g_joint1Angle = 0.0;
+
+//CREATE KEYHANDLER EVENTS FOR MOVING ROBOT ARM
+document.onkeydown = function(event)
+{
+  keydown(event);
+};
+
+
+
+function keydown(ev) 
+{
+  switch (ev.keyCode) {
+  case 38: // Up arrow key -> positive rotation of joint1 (z-axis)
+    if (g_joint1Angle < 135.0) g_joint1Angle -= ANGLE_STEP;
+    break;
+  case 39:
+    g_arm1Angle = (g_arm1Angle - ANGLE_STEP) % 360;
+    break;
+  case 40: // Down arrow key -> negative rotation of joint1 (z-axis)
+    if (g_joint1Angle > -135.0) g_joint1Angle += ANGLE_STEP;
+    break;
+  case 37: // Left arrow key -> negative rotation of arm1 (y-axis) 
+    g_arm1Angle = (g_arm1Angle + ANGLE_STEP) % 360;
+    break;
+  default: return; 
+  }
+}
+
+  
+
+//THE VIEW MATRIX IS FOUND AS scene._viewMatrix
+
+function init() {
+   var sin = Math.sin, cos = Math.cos, PI = Math.PI;
+
+   window.scene = new CT.Scene(canvas1);
+   scene.setLight(0, [1,1,1]);
+
+
+
+  //CREATE A GLOBAL OBJECT
+  window.arm = new CT.Node().scale(0.13);
+  scene.add(arm);
+
+  arm.addChild(new CT.Cube());
+  upperArm = arm.getChild(0);
+  upperArm.setColor([1,0,0]);
+
+  upperArm.addChild(new CT.Sphere(16,8));
+  elbow = upperArm.getChild(0);
+  elbow.setColor([1,0,0]);
+
+  upperArm.addChild(new CT.Cube());
+  forearm = upperArm.getChild(1);
+  forearm.setColor([1,0,0]);
+
+  forearm.addChild(new CT.Node());
+  hand = forearm.getChild(0);
+
+  hand.addChild(new CT.Cube());
+  palm = hand.getChild(0);
+  hand.setColor([1,0,0]);
+
+
+
+  console.log(upperArm);
+  console.log(forearm);
+
+
+}
+
+function update() {
+  //DO TRANSLATIONS / ROTATIONS ETC IN HERE
+  upperArm.identity().scale(0.5,1.5,0.5).translate(0.,-1.5,0.);
+
+  elbow.identity().translate(0,1.0,0);
+  
+  forearm.identity().translate(0.,2.1,0.);
+
+  hand.identity().translate(0.,2.5,0).scale(2.0,1.5,0.2);
+
+  //CT.matrixTranslated(0.,0.3,0.0);
+  
+  upperArm.rotateY(g_arm1Angle);
+  //forearm.rotateX(g_joint1Angle);
+  arm.draw();
+}
+
+setTimeout(function() {
+              init();
+              setInterval(function() {
+                             window.time = (new Date()).getTime() / 1000;
+                             update();
+                          }, 16);
+           }, 100);
+
+</script>
+<center>
+<canvas id=canvas1 width=1024 height=768></canvas>
+</center>
