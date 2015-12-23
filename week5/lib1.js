@@ -37,6 +37,8 @@ function start_gl(canvas_id, vertexShader, fragmentShader) {
       try {
          var canvas = document.getElementById(canvas_id);
          var gl = canvas.getContext("experimental-webgl");
+            gl.enable(gl.DEPTH_TEST);
+   gl.depthFunc(gl.LEQUAL);
       } catch (e) { throw "Sorry, your browser does not support WebGL."; }
 
       // Catch mouse events that go to the canvas.
@@ -93,9 +95,11 @@ function gl_init(gl, vertexShader, fragmentShader) {
 
    // Assign attribute aPosition to each of the square's vertices.
 
+
    gl.aPosition = gl.getAttribLocation(program, "aPosition");
    gl.enableVertexAttribArray(gl.aPosition);
    gl.vertexAttribPointer(gl.aPosition, 3, gl.FLOAT, false, 0, 0);
+
 
    // Remember the address within the fragment shader of each of my uniform variables.
 
